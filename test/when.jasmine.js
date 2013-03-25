@@ -297,4 +297,170 @@ describe("when.js tests", function(){
       expect(this.val3 >= this.val2).toBeTruthy();
     });
   });
+
+  it("#11", function(){
+    console.log("#11");
+    var callCount1 = 0;
+    var testFinished = 0;
+
+    var func1 = function(){
+      callCount1++;
+      console.log("1-"+(new Date().getTime())+", call #"+callCount1);
+      this.complete();
+    };
+
+    var w = when(func1);
+    w.start();
+    w.start();
+
+    $.wait(250).then(function(){
+      testFinished = 1;
+    });
+
+    waitsFor(function(){
+      return testFinished == 1;
+    });
+
+    runs(function(){
+      expect(callCount1).toBe(1);
+    });
+  });
+
+  it("#12", function(){
+    console.log("#12");
+    var callCount1 = 0;
+    var callCount2 = 0;
+    var testFinished = 0;
+
+    var func1 = function(){
+      callCount1++;
+      console.log("1-"+(new Date().getTime())+", call #"+callCount1);
+      this.complete();
+    };
+    var func2 = function(){
+      callCount2++;
+      console.log("2-"+(new Date().getTime())+", call #"+callCount2);
+      this.complete();
+    };
+
+    var w = when([func1, func2]);
+    w.start();
+    w.start();
+
+    $.wait(100).then(function(){
+      testFinished = 1;
+    });
+
+    waitsFor(function(){
+      return testFinished == 1;
+    });
+
+    runs(function(){
+      expect(callCount1).toBe(1);
+      expect(callCount2).toBe(1);
+    });
+  });
+
+  it("#13", function(){
+    console.log("#13");
+    var callCount1 = 0;
+    var callCount2 = 0;
+    var callCount3 = 0;
+    var testFinished = 0;
+
+    var func1 = function(){
+      callCount1++;
+      console.log("1-"+(new Date().getTime())+", call #"+callCount1);
+      this.complete();
+    };
+    var func2 = function(){
+      callCount2++;
+      console.log("2-"+(new Date().getTime())+", call #"+callCount2);
+      this.complete();
+    };
+    var func3 = function(){
+      callCount3++;
+      console.log("3-"+(new Date().getTime())+", call #"+callCount3);
+      this.complete();
+    };
+
+    var w = when([func1, func2]);
+    var c = w.continueWith(func3);
+    w.start();
+    c.start();
+    w.start();
+    c.start();
+    w.start();
+
+    $.wait(100).then(function(){
+      testFinished = 1;
+    });
+
+    waitsFor(function(){
+      return testFinished == 1;
+    });
+
+    runs(function(){
+      expect(callCount1).toBe(1);
+      expect(callCount2).toBe(1);
+      expect(callCount3).toBe(1);
+    });
+  });
+
+  it("#14", function(){
+    console.log("#14");
+    var callCount1 = 0;
+    var callCount2 = 0;
+    var callCount3 = 0;
+    var callCount4 = 0;
+    var testFinished = 0;
+
+    var func1 = function(){
+      callCount1++;
+      console.log("1-"+(new Date().getTime())+", call #"+callCount1);
+      this.complete();
+    };
+    var func2 = function(){
+      callCount2++;
+      console.log("2-"+(new Date().getTime())+", call #"+callCount2);
+      this.complete();
+    };
+    var func3 = function(){
+      callCount3++;
+      console.log("3-"+(new Date().getTime())+", call #"+callCount3);
+      this.complete();
+    };
+    var func4 = function(){
+      callCount4++;
+      console.log("4-"+(new Date().getTime())+", call #"+callCount4);
+      this.complete();
+    };
+
+    var w2 = when(func2);
+    var w1 = when([func1, w2]);
+    var c = w1.continueWith(func3);
+    w2.start();
+    w1.start();
+    c.start();
+    w2.continueWith(func4);
+    w1.start();
+    w2.start();
+    c.start();
+    w1.start();
+    w2.start();
+
+    $.wait(100).then(function(){
+      testFinished = 1;
+    });
+
+    waitsFor(function(){
+      return testFinished == 1;
+    });
+
+    runs(function(){
+      expect(callCount1).toBe(1);
+      expect(callCount2).toBe(1);
+      expect(callCount3).toBe(1);
+    });
+  });
 });

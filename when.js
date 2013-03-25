@@ -17,9 +17,13 @@
 
   wrapFuncFunc = function(func){
     var deferred = $.Deferred(),
-        promise = deferred.promise();
+        promise = deferred.promise(),
+        wasInvoked = false;
 
     promise.invoke = function(){
+      if (wasInvoked) return;
+      wasInvoked = true;
+      
       func.apply({
         complete: function(){
           deferred.resolve();
@@ -34,9 +38,13 @@
 
   wrapSyncFuncFunc = function(func){
     var deferred = $.Deferred(),
-        promise = deferred.promise();
+        promise = deferred.promise(),
+        wasInvoked = false;
 
     promise.invoke = function(){
+      if (wasInvoked) return;
+      wasInvoked = true;
+
       func();
       deferred.resolve();
     };
@@ -70,9 +78,13 @@
   getArrayPromiseFunc = function() {
     var promisses = [],
         deferred = $.Deferred(),
-        promise = deferred.promise();
+        promise = deferred.promise(),
+        wasInvoked = false;
 
     var invokePromisses = function () {
+      if (wasInvoked) return;
+      wasInvoked = true;
+
       var executedPromisses = getExecutePromissesFunc(promisses);
 
       $.when.apply(null, executedPromisses).then(function () {
