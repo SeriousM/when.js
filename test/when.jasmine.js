@@ -810,4 +810,38 @@ describe("when.js tests", function(){
       expect(callCount3).toBe(1);
     });
   });
+
+  it("#26", function(){
+    console.log("#26");
+    var val1, val2, val3, val4, val5, val6, val7, val8, val9;
+    val1 = val2 = val3 = val4 = val5 = val6 = val7 = val8 = val9 = 0;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 57);
+    var func3 = getAsyncFunc(this, 3, 96);
+    var func4 = getAsyncFunc(this, 4, 85);
+    var func5 = getAsyncFunc(this, 5, 57);
+    var func6 = getAsyncFunc(this, 6, 73);
+    var func7 = getAsyncFunc(this, 7, 88);
+    var func8 = getAsyncFunc(this, 8, 24);
+    var func9 = getAsyncFunc(this, 9, 15);
+
+    var w = when(func1)
+      .continueWith([
+        when(func2).continueWith([func3, func4]),
+        when(func5).continueWith([func6, func7]).continueWith(func8)
+      ]).continueWith(func9);
+
+    var s = w.start();
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0 && this.val4 > 0 && this.val5 > 0 && this.val6 > 0 && this.val7 > 0 && this.val8 > 0 && this.val9 > 0;
+    });
+
+    runs(function(){
+      expect(this.val8).toBeGreaterThan(this.val6);
+      expect(this.val8).toBeGreaterThan(this.val7);
+      expect(this.val9).toBeGreaterThan(this.val8);
+    });
+  });
 });
