@@ -54,7 +54,7 @@ describe("when.js tests", function(){
     };
 
     var w = when(func1);
-    w.when(func2);
+    w.continueWith(func2);
     wu = windUp(w);
     wu.release();
 
@@ -91,7 +91,7 @@ describe("when.js tests", function(){
 
     var w2 = when(func2);
     var w = when(func1);
-    w.when(w2);
+    w.continueWith(w2);
     wu = windUp(w);
     wu.release();
 
@@ -172,7 +172,7 @@ describe("when.js tests", function(){
     };
 
     var w = when([func1, func2]);
-    w.when(func3);
+    w.continueWith(func3);
     wu = windUp(w);
     wu.release();
 
@@ -228,7 +228,7 @@ describe("when.js tests", function(){
 
     var w2 = when([func2, func3]);
     var w = when([func1, w2]);
-    w.when(func4);
+    w.continueWith(func4);
     wu = windUp(w);
     wu.release();
 
@@ -322,9 +322,9 @@ describe("when.js tests", function(){
     var w = when(
               [when([func1, func2]), 
               when([func3, func4])])
-            .when(func5)
-            .when([func6, func7])
-            .when(func8);
+            .continueWith(func5)
+            .continueWith([func6, func7])
+            .continueWith(func8);
 
     wu = windUp(w);
     wu.release();

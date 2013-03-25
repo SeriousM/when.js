@@ -100,7 +100,7 @@
       selfPromise.addPromise(item);
     });
 
-    selfPromise.when = whenFunc;
+    selfPromise.continueWith = whenFunc;
 
     // check if the caller is already a self made promise
     if (isWhenPromiseFunc(this)){
