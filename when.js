@@ -1,6 +1,6 @@
 ﻿(function(window, $, undefined){
   var whenFunc, wrapFuncFunc, isWhenObjectFunc, isPromiseObjectFunc,
-   getParentOrCurrentPromiseFunc, getExecutePromissesFunc, extendExternalDeferredWithInvokeFunc,
+   getParentOrCurrentPromiseFunc, getExecutePromissesFunc,
    wrapSyncFuncFunc, getArrayPromiseFunc, getAppropriatePromissesFunc, startFunc;
 
   isWhenObjectFunc = function(promise){
@@ -54,20 +54,15 @@
     return promise;
   };
 
-  extendExternalDeferredWithInvokeFunc = function(promise){
-    promise.invoke = function(){
-      // do nothing here, the promise implementer will handle that
-    };
-    promise.__func = "external promise";
-
-    return promise;
-  };
-
   getExecutePromissesFunc = function (deferredInfoArray) {
     var deferredArray = [];
 
     $.each(deferredInfoArray, function(index, item) {
-      item.invoke();
+      // case: nested in-between whens with continueWith's
+      // we invoking the parent of the promise to start in-between-when's
+      // the item itself will be executed anyway when the parent calls it
+      var parentPromise = getParentOrCurrentPromiseFunc(item);
+      parentPromise.invoke();
 
       deferredArray.push(item);
     });
@@ -77,6 +72,7 @@
 
   getArrayPromiseFunc = function() {
     var promisses = [],
+        monitoring = [],
         deferred = $.Deferred(),
         promise = deferred.promise(),
         wasInvoked = false;
@@ -86,8 +82,9 @@
       wasInvoked = true;
 
       var executedPromisses = getExecutePromissesFunc(promisses);
+      var promissesToMonitor = executedPromisses.concat(monitoring);
 
-      $.when.apply(null, executedPromisses).then(function () {
+      $.when.apply(null, promissesToMonitor).then(function () {
         deferred.resolve();
       });
     };
@@ -100,6 +97,10 @@
       promisses.push(p);
     };
 
+    promise.addMonitoring = function(m){
+      monitoring.push(m);
+    };
+
     promise.invoke = function() {
         invokePromisses();
     };
@@ -108,22 +109,24 @@
   };
 
   getAppropriatePromissesFunc = function(func){
-    var promisses;
+    var promisses = [], monitoring = [];
 
     if (func instanceof Function){
-      promisses = [wrapFuncFunc(func)];
+      promisses.push(wrapFuncFunc(func));
     }
     else if (func instanceof Array){
       promisses = [];
       $.each(func, function(index, item){
-        promisses = promisses.concat(getAppropriatePromissesFunc(item));
+        var innerCall = getAppropriatePromissesFunc(item);
+        promisses = promisses.concat(innerCall.promisses);
+        monitoring = monitoring.concat(innerCall.monitoring);
       });
     }
     else if (isWhenObjectFunc(func)){
-      promisses = [func];
+      promisses.push(func);
     }
     else if (isPromiseObjectFunc(func)){
-      promisses = [extendExternalDeferredWithInvokeFunc(func)];
+      monitoring.push(func);
     }
     else {
       throw new Error("The argument or part of the array must be euither a "+
@@ -131,7 +134,10 @@
         "sync function wrapped with wrapSync.");
     }
 
-    return promisses;
+    return {
+      promisses: promisses,
+      monitoring: monitoring
+    };
   };
 
   startFunc = function(){
@@ -149,11 +155,14 @@
     var selfPromise = getArrayPromiseFunc();
 
     // gather/create a promise of the argument
-    var promisses = getAppropriatePromissesFunc(func);
+    var innerCall = getAppropriatePromissesFunc(func);
     
     // add the new promise of the argument to the hosting promise
-    $.each(promisses, function(index, item){
+    $.each(innerCall.promisses, function(index, item){
       selfPromise.addPromise(item);
+    });
+    $.each(innerCall.monitoring, function(index, item){
+      selfPromise.addMonitoring(item);
     });
 
     // check if the caller is already a self made promise.
