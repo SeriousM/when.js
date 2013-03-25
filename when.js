@@ -1,7 +1,7 @@
 ﻿(function(window, $, undefined){
-  var whenFunc, wrapFuncFunc, isWhenObjectFunc, isPromiseObjectFunc,
+  var whenFunc, wrapAsyncFuncFunc, isWhenObjectFunc, isPromiseObjectFunc,
    getParentOrCurrentPromiseFunc, getExecutePromissesFunc,
-   wrapSyncFuncFunc, getArrayPromiseFunc, getAppropriatePromissesFunc, startFunc;
+   wrapSyncFuncFunc, getPromiseHostFunc, getPromissesInfoFunc, startFunc;
 
   isWhenObjectFunc = function(promise){
     return promise && promise['invoke'] != undefined;
@@ -15,7 +15,8 @@
     return promise['parent'] ? promise.parent() : promise;
   };
 
-  wrapFuncFunc = function(func){
+  wrapAsyncFuncFunc = function(func){
+    // this func will call 'this.complete'
     var deferred = $.Deferred(),
         promise = deferred.promise(),
         wasInvoked = false;
@@ -31,12 +32,14 @@
       });
     };
 
+    // info: this is for debug purposes
     promise.__func = func;
 
     return promise;
   };
 
   wrapSyncFuncFunc = function(func){
+    // sync functions does not call 'this.complete'
     var deferred = $.Deferred(),
         promise = deferred.promise(),
         wasInvoked = false;
@@ -49,6 +52,7 @@
       deferred.resolve();
     };
 
+    // info: this is for debug purposes
     promise.__func = func;
 
     return promise;
@@ -70,7 +74,7 @@
     return deferredArray;
   };
 
-  getArrayPromiseFunc = function() {
+  getPromiseHostFunc = function() {
     var promisses = [],
         monitoring = [],
         deferred = $.Deferred(),
@@ -89,37 +93,34 @@
       });
     };
 
-    promise.getPromisses = function () {
-      return promisses;
-    };
-
-    promise.addPromise = function (p) {
-      promisses.push(p);
-    };
-
-    promise.addMonitoring = function(m){
-      monitoring.push(m);
-    };
-
     promise.invoke = function() {
         invokePromisses();
+    };
+
+    promise.addPromissesInfo = function(promissesInfo){
+      $.each(promissesInfo.promisses, function(index, item){
+        promisses.push(item);
+      });
+      $.each(promissesInfo.monitoring, function(index, item){
+        monitoring.push(item);
+      });
     };
 
     return promise;
   };
 
-  getAppropriatePromissesFunc = function(func){
+  getPromissesInfoFunc = function(func){
     var promisses = [], monitoring = [];
 
     if (func instanceof Function){
-      promisses.push(wrapFuncFunc(func));
+      promisses.push(wrapAsyncFuncFunc(func));
     }
     else if (func instanceof Array){
       promisses = [];
       $.each(func, function(index, item){
-        var innerCall = getAppropriatePromissesFunc(item);
-        promisses = promisses.concat(innerCall.promisses);
-        monitoring = monitoring.concat(innerCall.monitoring);
+        var promissesInfo = getPromissesInfoFunc(item);
+        promisses = promisses.concat(promissesInfo.promisses);
+        monitoring = monitoring.concat(promissesInfo.monitoring);
       });
     }
     else if (isWhenObjectFunc(func)){
@@ -129,7 +130,7 @@
       monitoring.push(func);
     }
     else {
-      throw new Error("The argument or part of the array must be euither a "+
+      throw new Error("The argument or part of the array must be either a "+
         "function that calls 'this.complete()', a when object, a promise or a "+
         "sync function wrapped with wrapSync.");
     }
@@ -151,43 +152,34 @@
   };
 
   whenFunc = function(func){
-    // create the hosting promise
-    var selfPromise = getArrayPromiseFunc();
+    var promiseHost = getPromiseHostFunc();
 
-    // gather/create a promise of the argument
-    var innerCall = getAppropriatePromissesFunc(func);
-    
-    // add the new promise of the argument to the hosting promise
-    $.each(innerCall.promisses, function(index, item){
-      selfPromise.addPromise(item);
-    });
-    $.each(innerCall.monitoring, function(index, item){
-      selfPromise.addMonitoring(item);
-    });
+    var promissesInfo = getPromissesInfoFunc(func);
+    promiseHost.addPromissesInfo(promissesInfo);
 
     // check if the caller is already a self made promise.
     // if so, attach to the parent then function
     if (isWhenObjectFunc(this)){
-      var callingPromise = this;
+      var callingPromiseHost = this;
 
-      selfPromise.parent = function(){
-        return getParentOrCurrentPromiseFunc(callingPromise);
+      promiseHost.parent = function(){
+        return getParentOrCurrentPromiseFunc(callingPromiseHost);
       };
 
-      callingPromise.then(function(){
-        selfPromise.invoke();
+      callingPromiseHost.then(function(){
+        promiseHost.invoke();
       });
     }
 
     // enable chaining
-    selfPromise.continueWith = whenFunc;
+    promiseHost.continueWith = whenFunc;
 
     // define the launch-method
-    selfPromise.start = startFunc;
+    promiseHost.start = startFunc;
 
-    return selfPromise;
+    return promiseHost;
   };
 
   window.when = whenFunc;
   window.wrapSync = wrapSyncFuncFunc;
-})(window, jQuery)
+})(window, jQuery);

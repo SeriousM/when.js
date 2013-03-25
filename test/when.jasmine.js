@@ -754,6 +754,60 @@ describe("when.js tests", function(){
       expect(this.val5).toBeGreaterThan(this.val3);
       expect(this.val4).toBeGreaterThan(this.val1);
       expect(this.val5).toBeGreaterThan(this.val2);
+      expect(this.val3).toBeGreaterThan(this.val1);
+      expect(this.val3).toBeGreaterThan(this.val2);
+    });
+  });
+
+  it("#25", function(){
+    console.log("#25");
+    var callCount1 = 0;
+    var callCount2 = 0;
+    var callCount3 = 0;
+    var callCount4 = 0;
+    var testFinished = 0;
+
+    var func1 = function(){
+      callCount1++;
+      console.log("1-"+(new Date().getTime())+", call #"+callCount1);
+      this.complete();
+    };
+    var func2 = function(){
+      callCount2++;
+      console.log("2-"+(new Date().getTime())+", call #"+callCount2);
+      this.complete();
+    };
+    var func3 = function(){
+      callCount3++;
+      console.log("3-"+(new Date().getTime())+", call #"+callCount3);
+      this.complete();
+    };
+    var func4 = function(){
+      callCount4++;
+      console.log("4-"+(new Date().getTime())+", call #"+callCount4);
+      this.complete();
+    };
+
+    var w2 = when(func2);
+    var w1 = when([func1, w2]);
+    var c = w1.continueWith(func3);
+    w2.start();
+    w1.start();
+    c.start();
+    w2.continueWith(func4);
+
+    $.wait(100).then(function(){
+      testFinished = 1;
+    });
+
+    waitsFor(function(){
+      return testFinished == 1;
+    });
+
+    runs(function(){
+      expect(callCount1).toBe(1);
+      expect(callCount2).toBe(1);
+      expect(callCount3).toBe(1);
     });
   });
 });
