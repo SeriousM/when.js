@@ -463,4 +463,174 @@ describe("when.js tests", function(){
       expect(callCount3).toBe(1);
     });
   });
+
+  it("#15", function(){
+    console.log("#15");
+    var val1 = 0;
+    var val2 = 0;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
+
+    var w = when(
+      function(){
+        when(func1).start().then(this.complete);
+      })
+    .continueWith(
+      function(){
+        when(func2).start().then(this.complete);
+    });
+
+    w.start();
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0;
+    });
+
+    runs(function(){
+      expect(this.val2).toBeGreaterThan(this.val1);
+    });
+  });
+
+  it("#16", function(){
+    console.log("#16");
+    var val1 = 0;
+    var val2 = 0;
+    var val3 = 0;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
+    var func3 = getAsyncFunc(this, 3, 75);
+
+    var w = when(
+      function(){
+        var self = this;
+        when(func1).start().then(function(){
+          self.complete();
+      });
+    }).continueWith(
+      function(){
+        var self = this;
+        when(func2).start().then(function(){
+          self.complete();
+      });
+    }).continueWith(
+      function(){
+        var self = this;
+        when(func3).start().then(function(){
+          self.complete();
+      });
+    });
+
+    w.start();
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0;
+    });
+
+    runs(function(){
+      expect(this.val3).toBeGreaterThan(this.val2);
+      expect(this.val3).toBeGreaterThan(this.val1);
+      expect(this.val2).toBeGreaterThan(this.val1);
+    });
+  });
+
+  it("#17", function(){
+    console.log("#17");
+    var val1 = 0;
+    var val2 = 0;
+    var val3 = 0;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
+    var func3 = getAsyncFunc(this, 3, 75);
+
+    var w = when(func1).continueWith(func2);
+    var s = w.start();
+    s.done(function(){
+      when(func3).start();
+    })
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0;
+    });
+
+    runs(function(){
+      expect(this.val3).toBeGreaterThan(this.val2);
+      expect(this.val3).toBeGreaterThan(this.val1);
+      expect(this.val2).toBeGreaterThan(this.val1);
+    });
+  });
+
+  it("#18", function(){
+    console.log("#18");
+    var val1 = 0;
+    var val2 = 0;
+    var val3 = 0;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
+    var func3 = getAsyncFunc(this, 3, 75);
+
+    var w = when(func1);
+    var c = w.continueWith(func2);
+    var s = c.start();
+    s.done(function(){
+      when(func3).start();
+    })
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0;
+    });
+
+    runs(function(){
+      expect(this.val3).toBeGreaterThan(this.val2);
+      expect(this.val3).toBeGreaterThan(this.val1);
+      expect(this.val2).toBeGreaterThan(this.val1);
+    });
+  });
+
+  it("#19", function(){
+    console.log("#19");
+    var val1 = 0;
+    var val2 = 0;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
+
+    var w = when(func1);
+    var s = w.start();
+    s.done(function(){
+      when(func2).start();
+    })
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0;
+    });
+
+    runs(function(){
+      expect(this.val2).toBeGreaterThan(this.val1);
+    });
+  });
+
+  it("#20", function(){
+    console.log("#20");
+    var val1 = 0;
+    var val2 = 0;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
+
+    var w = when(func1);
+    var s = w.start();
+    w.continueWith(func2);
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0;
+    });
+
+    runs(function(){
+      expect(this.val2).toBeGreaterThan(this.val1);
+    });
+  });
 });

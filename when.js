@@ -1,7 +1,7 @@
 ﻿(function(window, $, undefined){
   var whenFunc, wrapFuncFunc, isWhenObjectFunc, isPromiseObjectFunc,
    getParentOrCurrentPromiseFunc, getExecutePromissesFunc, extendExternalDeferredWithInvokeFunc,
-   wrapSyncFuncFunc, getArrayPromiseFunc, getAppropriatePromissesFunc;
+   wrapSyncFuncFunc, getArrayPromiseFunc, getAppropriatePromissesFunc, startFunc;
 
   isWhenObjectFunc = function(promise){
     return promise && promise['invoke'] != undefined;
@@ -134,6 +134,16 @@
     return promisses;
   };
 
+  startFunc = function(){
+    var whenOrContinueWithPromise = this;
+
+    var promiseToInvoke = getParentOrCurrentPromiseFunc(whenOrContinueWithPromise);
+    promiseToInvoke.invoke();
+    
+    // it is important to return the calling when-object for propper chaining
+    return whenOrContinueWithPromise;
+  };
+
   whenFunc = function(func){
     // create the hosting promise
     var selfPromise = getArrayPromiseFunc();
@@ -164,10 +174,7 @@
     selfPromise.continueWith = whenFunc;
 
     // define the launch-method
-    selfPromise.start = function(){
-      var promiseToInvoke = getParentOrCurrentPromiseFunc(selfPromise);
-      promiseToInvoke.invoke();
-    };
+    selfPromise.start = startFunc;
 
     return selfPromise;
   };
