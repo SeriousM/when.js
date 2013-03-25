@@ -1,8 +1,14 @@
 ﻿(function(window, $, undefined){
-  var whenFunc, wrapFuncFunc, windUpFunc, isWhenPromiseFunc, getParentOrCurrentPromiseFunc, getExecutePromissesFunc;
+  var whenFunc, wrapFuncFunc, isWhenObjectFunc, isPromiseObjectFunc,
+   getParentOrCurrentPromiseFunc, getExecutePromissesFunc, extendExternalDeferredWithInvokeFunc,
+   wrapSyncFuncFunc, getArrayPromiseFunc, getAppropriatePromissesFunc;
 
-  isWhenPromiseFunc = function(promise){
+  isWhenObjectFunc = function(promise){
     return promise && promise['invoke'] != undefined;
+  };
+
+  isPromiseObjectFunc = function(promise){
+    return promise && promise['promise'] != undefined;
   };
 
   getParentOrCurrentPromiseFunc = function(promise){
@@ -10,8 +16,8 @@
   };
 
   wrapFuncFunc = function(func){
-    var deferred = $.Deferred();
-    var promise = deferred.promise();
+    var deferred = $.Deferred(),
+        promise = deferred.promise();
 
     promise.invoke = function(){
       func.apply({
@@ -22,6 +28,29 @@
     };
 
     promise.__func = func;
+
+    return promise;
+  };
+
+  wrapSyncFuncFunc = function(func){
+    var deferred = $.Deferred(),
+        promise = deferred.promise();
+
+    promise.invoke = function(){
+      func();
+      deferred.resolve();
+    };
+
+    promise.__func = func;
+
+    return promise;
+  };
+
+  extendExternalDeferredWithInvokeFunc = function(promise){
+    promise.invoke = function(){
+      // do nothing here, the promise implementer will handle that
+    };
+    promise.__func = "external promise";
 
     return promise;
   };
@@ -38,20 +67,18 @@
     return deferredArray;
   };
 
-  var getArrayPromiseFunc = function() {
-    var promisses = [];
+  getArrayPromiseFunc = function() {
+    var promisses = [],
+        deferred = $.Deferred(),
+        promise = deferred.promise();
 
-    var deferred = $.Deferred();
-
-    var startBigWhen = function () {
+    var invokePromisses = function () {
       var executedPromisses = getExecutePromissesFunc(promisses);
 
       $.when.apply(null, executedPromisses).then(function () {
         deferred.resolve();
       });
     };
-
-    var promise = deferred.promise();
 
     promise.getPromisses = function () {
       return promisses;
@@ -62,13 +89,13 @@
     };
 
     promise.invoke = function() {
-        startBigWhen();
+        invokePromisses();
     };
 
     return promise;
   };
 
-  var getAppropriatePromissesFunc = function(func){
+  getAppropriatePromissesFunc = function(func){
     var promisses;
 
     if (func instanceof Function){
@@ -80,9 +107,16 @@
         promisses = promisses.concat(getAppropriatePromissesFunc(item));
       });
     }
-    else {
-      // expect that promise is a when-object
+    else if (isWhenObjectFunc(func)){
       promisses = [func];
+    }
+    else if (isPromiseObjectFunc(func)){
+      promisses = [extendExternalDeferredWithInvokeFunc(func)];
+    }
+    else {
+      throw new Error("The argument or part of the array must be euither a "+
+        "function that calls 'this.complete()', a when object, a promise or a "+
+        "sync function wrapped with wrapSync.");
     }
 
     return promisses;
@@ -100,10 +134,9 @@
       selfPromise.addPromise(item);
     });
 
-    selfPromise.continueWith = whenFunc;
-
-    // check if the caller is already a self made promise
-    if (isWhenPromiseFunc(this)){
+    // check if the caller is already a self made promise.
+    // if so, attach to the parent then function
+    if (isWhenObjectFunc(this)){
       var callingPromise = this;
 
       selfPromise.parent = function(){
@@ -115,18 +148,18 @@
       });
     }
 
+    // enable chaining
+    selfPromise.continueWith = whenFunc;
+
+    // define the launch-method
+    selfPromise.start = function(){
+      var promiseToInvoke = getParentOrCurrentPromiseFunc(selfPromise);
+      promiseToInvoke.invoke();
+    };
+
     return selfPromise;
   };
 
-  windUpFunc = function(promise){
-    return {
-      release: function(){
-        var promiseToInvoke = getParentOrCurrentPromiseFunc(promise);
-        promiseToInvoke.invoke();
-      }
-    };
-  };
-
   window.when = whenFunc;
-  window.windUp = windUpFunc;
+  window.wrapSync = wrapSyncFuncFunc;
 })(window, jQuery)

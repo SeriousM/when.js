@@ -4,247 +4,155 @@
   });
 }
 
+var getAsyncFunc = function(test, name, interval){
+  return function(){
+    var self = this;
+    $.wait(interval).then(function(){
+      var val = new Date().getTime();
+      console.log(name+"-"+val);
+      eval("test.val"+name+"="+val+";");
+      self.complete();
+    });
+  };
+};
+
 describe("when.js tests", function(){
-  it("#1", function(){
-    console.log("#1");
+  it("#01", function(){
+    console.log("#01");
     var val1 = 0;
 
-    var func1 = function(){
-      var self = this;
-      $.wait(100).then(function(){
-        val1 = new Date().getTime();
-        console.log("1-"+val1);
-        self.complete();
-      });
-    };
+    var func1 = getAsyncFunc(this, 1, 100);
 
-    var w = when(func1);
-    wu = windUp(w);
-    wu.release();
+    w = when(func1);
+    w.start();
 
     waitsFor(function(){
-      return val1 > 0;
+      return this.val1 > 0;
     });
 
     runs(function(){
-      expect(val1).toBeGreaterThan(0);
+      expect(this.val1).toBeGreaterThan(0);
     });
   });
 
-  it("#2", function(){
-    console.log("#2");
+  it("#02", function(){
+    console.log("#02");
     var val1 = 0;
     var val2 = 0;
 
-    var func1 = function(){
-      var self = this;
-      $.wait(150).then(function(){
-        val1 = new Date().getTime();
-        console.log("1-"+val1);
-        self.complete();
-      });
-    };
-    var func2 = function(){
-      var self = this;
-      $.wait(100).then(function(){
-        val2 = new Date().getTime();
-        console.log("2-"+val2);
-        self.complete();
-      });
-    };
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
 
     var w = when(func1);
     w.continueWith(func2);
-    wu = windUp(w);
-    wu.release();
+    w.start();
 
     waitsFor(function(){
-      return val1 > 0 && val2 > 0;
+      return this.val1 > 0 && this.val2 > 0;
     });
 
     runs(function(){
-      expect(val2).toBeGreaterThan(val1, "func 2 was faster");
+      expect(this.val2).toBeGreaterThan(this.val1, "func 2 was faster");
     });
   });
 
-  it("#3", function(){
-    console.log("#3");
+  it("#03", function(){
+    console.log("#03");
     var val1 = 0;
     var val2 = 0;
 
-    var func1 = function(){
-      var self = this;
-      $.wait(150).then(function(){
-        val1 = new Date().getTime();
-        console.log("1-"+val1);
-        self.complete();
-      });
-    };
-    var func2 = function(){
-      var self = this;
-      $.wait(100).then(function(){
-        val2 = new Date().getTime();
-        console.log("2-"+val2);
-        self.complete();
-      });
-    };
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
 
     var w2 = when(func2);
     var w = when(func1);
     w.continueWith(w2);
-    wu = windUp(w);
-    wu.release();
+    w.start();
 
     waitsFor(function(){
-      return val1 > 0 && val2 > 0;
+      return this.val1 > 0 && this.val2 > 0;
     });
 
     runs(function(){
-      expect(val2).toBeGreaterThan(val1, "func 2 was faster");
+      expect(this.val2).toBeGreaterThan(this.val1, "func 2 was faster");
     });
   });
 
-  it("#4", function(){
-    console.log("#4");
+  it("#04", function(){
+    console.log("#04");
     var val1 = 0;
     var val2 = 0;
 
-    var func1 = function(){
-      var self = this;
-      $.wait(150).then(function(){
-        val1 = new Date().getTime();
-        console.log("1-"+val1);
-        self.complete();
-      });
-    };
-    var func2 = function(){
-      var self = this;
-      $.wait(100).then(function(){
-        val2 = new Date().getTime();
-        console.log("2-"+val2);
-        self.complete();
-      });
-    };
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
 
     var w = when([func1, func2]);
-    wu = windUp(w);
-    wu.release();
+    w.start();
 
     waitsFor(function(){
-      return val1 > 0 && val2 > 0;
+      return this.val1 > 0 && this.val2 > 0;
     });
 
     runs(function(){
-      expect(val1).toBeGreaterThan(0);
-      expect(val2).toBeGreaterThan(0);
+      expect(this.val1).toBeGreaterThan(0);
+      expect(this.val2).toBeGreaterThan(0);
     });
   });
 
-  it("#5", function(){
-    console.log("#5");
+  it("#05", function(){
+    console.log("#05");
     var val1 = 0;
     var val2 = 0;
     var val3 = 0;
 
-    var func1 = function(){
-      var self = this;
-      $.wait(150).then(function(){
-        val1 = new Date().getTime();
-        console.log("1-"+val1);
-        self.complete();
-      });
-    };
-    var func2 = function(){
-      var self = this;
-      $.wait(100).then(function(){
-        val2 = new Date().getTime();
-        console.log("2-"+val2);
-        self.complete();
-      });
-    };
-    var func3 = function(){
-      var self = this;
-      $.wait(75).then(function(){
-        val3 = new Date().getTime();
-        console.log("3-"+val3);
-        self.complete();
-      });
-    };
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
+    var func3 = getAsyncFunc(this, 3, 75);
 
     var w = when([func1, func2]);
     w.continueWith(func3);
-    wu = windUp(w);
-    wu.release();
+    w.start();
 
     waitsFor(function(){
-      return val1 > 0 && val2 > 0 && val3 > 0;
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0;
     });
 
     runs(function(){
-      expect(val3).toBeGreaterThan(val1);
-      expect(val3).toBeGreaterThan(val2);
+      expect(this.val3).toBeGreaterThan(this.val1);
+      expect(this.val3).toBeGreaterThan(this.val2);
     });
   });
 
-  it("#6", function(){
-    console.log("#6");
+  it("#06", function(){
+    console.log("#06");
     var val1 = 0;
     var val2 = 0;
     var val3 = 0;
     var val4 = 0;
 
-    var func1 = function(){
-      var self = this;
-      $.wait(150).then(function(){
-        val1 = new Date().getTime();
-        console.log("1-"+val1);
-        self.complete();
-      });
-    };
-    var func2 = function(){
-      var self = this;
-      $.wait(100).then(function(){
-        val2 = new Date().getTime();
-        console.log("2-"+val2);
-        self.complete();
-      });
-    };
-    var func3 = function(){
-      var self = this;
-      $.wait(75).then(function(){
-        val3 = new Date().getTime();
-        console.log("3-"+val3);
-        self.complete();
-      });
-    };
-    var func4 = function(){
-      var self = this;
-      $.wait(50).then(function(){
-        val4 = new Date().getTime();
-        console.log("4-"+val4);
-        self.complete();
-      });
-    };
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
+    var func3 = getAsyncFunc(this, 3, 75);
+    var func4 = getAsyncFunc(this, 4, 50);
 
     var w2 = when([func2, func3]);
     var w = when([func1, w2]);
     w.continueWith(func4);
-    wu = windUp(w);
-    wu.release();
+    w.start();
 
     waitsFor(function(){
-      return val1 > 0 && val2 > 0 && val3 > 0 && val4 > 0;
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0 && this.val4 > 0;
     });
 
     runs(function(){
-      expect(val4).toBeGreaterThan(val1);
-      expect(val4).toBeGreaterThan(val2);
-      expect(val4).toBeGreaterThan(val3);
+      expect(this.val4).toBeGreaterThan(this.val1);
+      expect(this.val4).toBeGreaterThan(this.val2);
+      expect(this.val4).toBeGreaterThan(this.val3);
     });
   });
 
-  it("#7", function(){
-    console.log("#7");
+  it("#07", function(){
+    console.log("#07");
     var val1 = 0;
     var val2 = 0;
     var val3 = 0;
@@ -254,70 +162,14 @@ describe("when.js tests", function(){
     var val7 = 0;
     var val8 = 0;
 
-    var func1 = function(){
-      var self = this;
-      $.wait(150).then(function(){
-        val1 = new Date().getTime();
-        console.log("1-"+val1);
-        self.complete();
-      });
-    };
-    var func2 = function(){
-      var self = this;
-      $.wait(100).then(function(){
-        val2 = new Date().getTime();
-        console.log("2-"+val2);
-        self.complete();
-      });
-    };
-    var func3 = function(){
-      var self = this;
-      $.wait(75).then(function(){
-        val3 = new Date().getTime();
-        console.log("3-"+val3);
-        self.complete();
-      });
-    };
-    var func4 = function(){
-      var self = this;
-      $.wait(50).then(function(){
-        val4 = new Date().getTime();
-        console.log("4-"+val4);
-        self.complete();
-      });
-    };
-    var func5 = function(){
-      var self = this;
-      $.wait(350).then(function(){
-        val5 = new Date().getTime();
-        console.log("5-"+val5);
-        self.complete();
-      });
-    };
-    var func6 = function(){
-      var self = this;
-      $.wait(410).then(function(){
-        val6 = new Date().getTime();
-        console.log("6-"+val6);
-        self.complete();
-      });
-    };
-    var func7 = function(){
-      var self = this;
-      $.wait(333).then(function(){
-        val7 = new Date().getTime();
-        console.log("7-"+val7);
-        self.complete();
-      });
-    };
-    var func8 = function(){
-      var self = this;
-      $.wait(123).then(function(){
-        val8 = new Date().getTime();
-        console.log("8-"+val8);
-        self.complete();
-      });
-    };
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 100);
+    var func3 = getAsyncFunc(this, 3, 75);
+    var func4 = getAsyncFunc(this, 4, 50);
+    var func5 = getAsyncFunc(this, 5, 350);
+    var func6 = getAsyncFunc(this, 6, 410);
+    var func7 = getAsyncFunc(this, 7, 333);
+    var func8 = getAsyncFunc(this, 8, 123);
 
     var w = when(
               [when([func1, func2]), 
@@ -326,30 +178,123 @@ describe("when.js tests", function(){
             .continueWith([func6, func7])
             .continueWith(func8);
 
-    wu = windUp(w);
-    wu.release();
+    w.start();
 
     waitsFor(function(){
-      return val1 > 0 && val2 > 0 && val3 > 0 && val4 > 0 &&
-       val5 > 0 && val6 > 0 && val7 > 0 && val8 > 0;
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0 && this.val4 > 0 &&
+       this.val5 > 0 && this.val6 > 0 && this.val7 > 0 && this.val8 > 0;
     });
 
     runs(function(){
-      expect(val8).toBeGreaterThan(val1);
-      expect(val8).toBeGreaterThan(val2);
-      expect(val8).toBeGreaterThan(val3);
-      expect(val8).toBeGreaterThan(val4);
-      expect(val8).toBeGreaterThan(val5);
-      expect(val8).toBeGreaterThan(val6);
-      expect(val8).toBeGreaterThan(val7);
+      expect(this.val8).toBeGreaterThan(this.val1);
+      expect(this.val8).toBeGreaterThan(this.val2);
+      expect(this.val8).toBeGreaterThan(this.val3);
+      expect(this.val8).toBeGreaterThan(this.val4);
+      expect(this.val8).toBeGreaterThan(this.val5);
+      expect(this.val8).toBeGreaterThan(this.val6);
+      expect(this.val8).toBeGreaterThan(this.val7);
       
-      expect(val5).toBeGreaterThan(val1);
-      expect(val5).toBeGreaterThan(val2);
-      expect(val5).toBeGreaterThan(val3);
-      expect(val5).toBeGreaterThan(val4);
+      expect(this.val5).toBeGreaterThan(this.val1);
+      expect(this.val5).toBeGreaterThan(this.val2);
+      expect(this.val5).toBeGreaterThan(this.val3);
+      expect(this.val5).toBeGreaterThan(this.val4);
       
-      expect(val6).toBeGreaterThan(val5);
-      expect(val7).toBeGreaterThan(val5);
+      expect(this.val6).toBeGreaterThan(this.val5);
+      expect(this.val7).toBeGreaterThan(this.val5);
+    });
+  });
+
+  it("#08", function(){
+    console.log("#08");
+    var val1 = 0;
+    var val2 = 0;
+    var val3 = 0;
+    var test = this;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var sync2 = function(){
+      test.val2 = new Date().getTime();
+      console.log("2-"+test.val2);
+    };
+    var func3 = getAsyncFunc(this, 3, 75);
+
+    var w = when(func1).continueWith(wrapSync(sync2)).continueWith(func3);
+    w.start();
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0;
+    });
+
+    runs(function(){
+      expect(this.val2 >= this.val1).toBeTruthy();
+      expect(this.val3).toBeGreaterThan(this.val1);
+      expect(this.val3 >= this.val2).toBeTruthy();
+    });
+  });
+
+  it("#09", function(){
+    console.log("#09");
+    var val1 = 0;
+    var val2 = 0;
+    var val3 = 0;
+    var test = this;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var getFastPromise2 = function(){
+      var deferred = $.Deferred();
+      $.wait(50).then(function(){
+        test.val2 = new Date().getTime();
+        console.log("2-"+test.val2);
+        deferred.resolve();
+      });
+      return deferred.promise();
+    };
+    var func3 = getAsyncFunc(this, 3, 75);
+
+    var w = when(func1).continueWith(getFastPromise2()).continueWith(func3);
+    w.start();
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0;
+    });
+
+    runs(function(){
+      // we cant check val2 because it is an external deferred and maybe executed already
+      expect(this.val3).toBeGreaterThan(this.val1);
+      expect(this.val3 >= this.val2).toBeTruthy();
+    });
+  });
+
+  it("#10", function(){
+    console.log("#10");
+    var val1 = 0;
+    var val2 = 0;
+    var val3 = 0;
+    var test = this;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var getSlowPromise2 = function(){
+      var deferred = $.Deferred();
+      $.wait(300).then(function(){
+        test.val2 = new Date().getTime();
+        console.log("2-"+test.val2);
+        deferred.resolve();
+      });
+      return deferred.promise();
+    };
+    var func3 = getAsyncFunc(this, 3, 75);
+
+    var w = when([func1, getSlowPromise2()]).continueWith(func3);
+    w.start();
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0;
+    });
+
+    runs(function(){
+      // we cant check val2 because it is an external deferred and maybe executed already
+      expect(this.val3).toBeGreaterThan(this.val1);
+      expect(this.val3 >= this.val2).toBeTruthy();
     });
   });
 });
