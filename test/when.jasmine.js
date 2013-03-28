@@ -844,4 +844,33 @@ describe("when.js tests", function(){
       expect(this.val9).toBeGreaterThan(this.val8);
     });
   });
+
+  it("#27", function(){
+    console.log("#27");
+    var val1, val2, val3, val4, val5, val6;
+    val1 = val2 = val3 = val4 = val5 = val6 = 0;
+
+    var func1 = getAsyncFunc(this, 1, 150);
+    var func2 = getAsyncFunc(this, 2, 57);
+    var func3 = getAsyncFunc(this, 3, 96);
+    var func4 = getAsyncFunc(this, 4, 85);
+    var func5 = getAsyncFunc(this, 5, 57);
+    var func6 = getAsyncFunc(this, 6, 73);
+
+    var w = when([func1, func2])
+      .continueWith(
+        when(func3).continueWith([func4, func5])
+      ).continueWith(func6);
+
+    var s = w.start();
+
+    waitsFor(function(){
+      return this.val1 > 0 && this.val2 > 0 && this.val3 > 0 && this.val4 > 0 && this.val5 > 0 && this.val6;
+    });
+
+    runs(function(){
+      expect(this.val6).toBeGreaterThan(this.val4);
+      expect(this.val6).toBeGreaterThan(this.val4);
+    });
+  });
 });
