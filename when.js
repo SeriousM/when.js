@@ -152,6 +152,7 @@
   };
 
   whenFunc = function(func){
+    func = func || wrapSync(function nop(){});
     var promiseHost = getPromiseHostFunc();
 
     var promissesInfo = getPromissesInfoFunc(func);

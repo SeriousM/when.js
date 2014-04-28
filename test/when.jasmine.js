@@ -873,4 +873,22 @@ describe("when.js tests", function(){
       expect(this.val6).toBeGreaterThan(this.val4);
     });
   });
+
+  it("#28", function(){
+    console.log("#28");
+    var val1 = 0;
+
+    var func1 = getAsyncFunc(this, 1, 100);
+
+    w = when().continueWith(func1);
+    w.start();
+
+    waitsFor(function(){
+      return this.val1 > 0;
+    });
+
+    runs(function(){
+      expect(this.val1).toBeGreaterThan(0);
+    });
+  });
 });
