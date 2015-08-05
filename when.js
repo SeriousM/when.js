@@ -1,21 +1,23 @@
-﻿(function(window, $, undefined){
-  var whenFunc, wrapAsyncFuncFunc, isWhenObjectFunc, isPromiseObjectFunc,
-   getParentOrCurrentPromiseFunc, getExecutePromissesFunc,
-   wrapSyncFuncFunc, getPromiseHostFunc, getPromissesInfoFunc, startFunc;
+﻿(function (window, $, undefined) {
+  "use strict";
 
-  isWhenObjectFunc = function(promise){
-    return promise && promise['invoke'] != undefined;
+  var when, wrapAsyncFunc, isWhenObject, isPromiseObject,
+   getParentOrCurrentPromise, getExecutePromisses,
+   wrapSyncFunc, getPromiseHost, getPromissesInfo, start;
+
+  isWhenObject = function(promise){
+    return promise && promise["invoke"] !== undefined;
   };
 
-  isPromiseObjectFunc = function(promise){
-    return promise && promise['promise'] != undefined;
+  isPromiseObject = function(promise){
+    return promise && promise["promise"] !== undefined;
   };
 
-  getParentOrCurrentPromiseFunc = function(promise){
-    return promise['parent'] ? promise.parent() : promise;
+  getParentOrCurrentPromise = function(promise){
+    return promise["parent"] ? promise.parent() : promise;
   };
 
-  wrapAsyncFuncFunc = function(func){
+  wrapAsyncFunc = function(func){
     // this func will call 'this.complete'
     var deferred = $.Deferred(),
         promise = deferred.promise(),
@@ -38,7 +40,7 @@
     return promise;
   };
 
-  wrapSyncFuncFunc = function(func){
+  wrapSyncFunc = function(func){
     // sync functions does not call 'this.complete'
     var deferred = $.Deferred(),
         promise = deferred.promise(),
@@ -58,14 +60,14 @@
     return promise;
   };
 
-  getExecutePromissesFunc = function (deferredInfoArray) {
+  getExecutePromisses = function (deferredInfoArray) {
     var deferredArray = [];
 
     $.each(deferredInfoArray, function(index, item) {
       // case: nested in-between whens with continueWith's
       // we invoking the parent of the promise to start in-between-when's
       // the item itself will be executed anyway when the parent calls it
-      var parentPromise = getParentOrCurrentPromiseFunc(item);
+      var parentPromise = getParentOrCurrentPromise(item);
       parentPromise.invoke();
 
       deferredArray.push(item);
@@ -74,19 +76,20 @@
     return deferredArray;
   };
 
-  getPromiseHostFunc = function() {
+  getPromiseHost = function() {
     var promisses = [],
         monitoring = [],
         deferred = $.Deferred(),
         promise = deferred.promise(),
-        wasInvoked = false;
+        wasInvoked = false,
+        invokePromisses;
 
-    var invokePromisses = function () {
+    invokePromisses = function () {
       if (wasInvoked) return;
       wasInvoked = true;
 
-      var executedPromisses = getExecutePromissesFunc(promisses);
-      var promissesToMonitor = executedPromisses.concat(monitoring);
+      var executedPromisses = getExecutePromisses(promisses),
+          promissesToMonitor = executedPromisses.concat(monitoring);
 
       $.when.apply(null, promissesToMonitor).then(function () {
         deferred.resolve();
@@ -109,24 +112,25 @@
     return promise;
   };
 
-  getPromissesInfoFunc = function(func){
-    var promisses = [], monitoring = [];
+  getPromissesInfo = function(func){
+    var promisses = [],
+        monitoring = [];
 
     if (func instanceof Function){
-      promisses.push(wrapAsyncFuncFunc(func));
+      promisses.push(wrapAsyncFunc(func));
     }
     else if (func instanceof Array){
       promisses = [];
       $.each(func, function(index, item){
-        var promissesInfo = getPromissesInfoFunc(item);
+        var promissesInfo = getPromissesInfo(item);
         promisses = promisses.concat(promissesInfo.promisses);
         monitoring = monitoring.concat(promissesInfo.monitoring);
       });
     }
-    else if (isWhenObjectFunc(func)){
+    else if (isWhenObject(func)){
       promisses.push(func);
     }
-    else if (isPromiseObjectFunc(func)){
+    else if (isPromiseObject(func)){
       monitoring.push(func);
     }
     else {
@@ -141,30 +145,32 @@
     };
   };
 
-  startFunc = function(){
-    var whenOrContinueWithPromise = this;
+  start = function(){
+    var whenOrContinueWithPromise = this,
+        promiseToInvoke = getParentOrCurrentPromise(whenOrContinueWithPromise);
 
-    var promiseToInvoke = getParentOrCurrentPromiseFunc(whenOrContinueWithPromise);
     promiseToInvoke.invoke();
     
     // it is important to return the calling when-object for propper chaining
     return whenOrContinueWithPromise;
   };
 
-  whenFunc = function(func){
-    func = func || wrapSync(function nop(){});
-    var promiseHost = getPromiseHostFunc();
+  when = function (func) {
+    var promiseHost = getPromiseHost(),
+        promissesInfo;
 
-    var promissesInfo = getPromissesInfoFunc(func);
+    func = func || wrapSync(function nop(){});
+
+    promissesInfo = getPromissesInfo(func);
     promiseHost.addPromissesInfo(promissesInfo);
 
     // check if the caller is already a self made promise.
     // if so, attach to the parent then function
-    if (isWhenObjectFunc(this)){
+    if (isWhenObject(this)){
       var callingPromiseHost = this;
 
       promiseHost.parent = function(){
-        return getParentOrCurrentPromiseFunc(callingPromiseHost);
+        return getParentOrCurrentPromise(callingPromiseHost);
       };
 
       callingPromiseHost.then(function(){
@@ -173,14 +179,14 @@
     }
 
     // enable chaining
-    promiseHost.continueWith = whenFunc;
+    promiseHost.continueWith = when;
 
     // define the launch-method
-    promiseHost.start = startFunc;
+    promiseHost.start = start;
 
     return promiseHost;
   };
 
-  window.when = whenFunc;
-  window.wrapSync = wrapSyncFuncFunc;
+  window.when = when;
+  window.wrapSync = wrapSyncFunc;
 })(window, jQuery);
